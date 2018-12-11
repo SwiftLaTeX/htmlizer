@@ -10,14 +10,15 @@ import time
 import os
 import config
 from flask_limiter import Limiter
-queue = Queue(connection=Redis())
+queue = Queue('htmlizer', connection=Redis())
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
 
 
 def get_token_from_header():
     s_token = request.headers.get('S-TOKEN', "00000000000000000000000000000000")
-    if isinstance(s_token, str) and s_token in config.ALLOWED_TOKEN:
+    ALLOWED_TOKEN = ['12345678123456781234567812345678'] #Just a test
+    if isinstance(s_token, str) and s_token in ALLOWED_TOKEN:
         return s_token
     return "00000000000000000000000000000000"
 
@@ -53,11 +54,12 @@ def htmlizer_endpoint():
 
     save_filename = os.path.join(config.WORKPLACE_DIR, string_utils.hash_filename(remote_url) + ".pdf")
     output_filename = string_utils.gen_random_string(16) + ".html"
+    need_download = True
     if use_cache != "no":
-        if not os.path.exists(os.path.join(config.WORKPLACE_DIR, save_filename)):
-            return jsonify({"result": "failed", "code": "-07",
-                            "reason": "Cache not existed"}), 500
-    else:
+        if os.path.exists(os.path.join(config.WORKPLACE_DIR, save_filename)):
+            need_download = False
+
+    if need_download:
         if not get_remote_file(remote_url, save_filename):
             return jsonify({"result": "failed", "code": "-06", "reason": "Unable to fetch remote file, either it is too large or unreachable!"}), 500
 
