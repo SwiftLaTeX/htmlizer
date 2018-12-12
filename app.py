@@ -1,4 +1,4 @@
-from redis import Redis
+import redis
 from rq import Queue
 from flask import Flask, jsonify, send_from_directory, g, abort, request
 import string_utils
@@ -10,8 +10,11 @@ import time
 import os
 import config
 from flask_limiter import Limiter
-queue = Queue('htmlizer', connection=Redis())
+RATELIMIT_STORAGE_URL = config.REDIS_URL
+redis_instance = redis.from_url(config.REDIS_URL)
+queue = Queue('htmlizer', connection=redis_instance)
 app = Flask(__name__)
+app.config.from_object(__name__)
 
 
 
@@ -34,7 +37,7 @@ htmlizer_schema = {
         'url': {'type': 'string'},
         'page': {'type': 'string'},
         'zoom_ratio': {'type': 'string'},
-        'use_cache': {'type': 'string'}
+        'modified_time': {'type': 'integer'}
     },
     'required': ['url']
 }
@@ -47,7 +50,7 @@ def htmlizer_endpoint():
     remote_url = g.data['url']
     page = "1" if not 'page' in g.data else g.data['page']
     zoom_ratio = "1" if not 'zoom_ratio' in g.data else g.data['zoom_ratio']
-    use_cache = "no" if not 'use_cache' in g.data else g.data['use_cache']
+    modified_time = 0 if not 'modified_time' in g.data else g.data['modified_time']
 
     if remote_url == "" or not remote_url.startswith("http"):
         return jsonify({"result": "failed", "code": "-05", "reason": "invalid url detected!"}), 500
@@ -55,13 +58,15 @@ def htmlizer_endpoint():
     save_filename = os.path.join(config.WORKPLACE_DIR, string_utils.hash_filename(remote_url) + ".pdf")
     output_filename = string_utils.gen_random_string(16) + ".html"
     need_download = True
-    if use_cache != "no":
+    if modified_time != 0 and int(redis_instance.get(save_filename)) == modified_time:
         if os.path.exists(os.path.join(config.WORKPLACE_DIR, save_filename)):
             need_download = False
 
     if need_download:
         if not get_remote_file(remote_url, save_filename):
             return jsonify({"result": "failed", "code": "-06", "reason": "Unable to fetch remote file, either it is too large or unreachable!"}), 500
+        redis_instance.set(save_filename, modified_time)
+
 
     job = queue.enqueue_call(htmlizer.convert_pdf_to_html, args=(save_filename, output_filename, page, zoom_ratio,),
                              timeout=config.TASK_TIMEOUT)
