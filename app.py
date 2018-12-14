@@ -58,7 +58,8 @@ def htmlizer_endpoint():
     save_filename = os.path.join(config.WORKPLACE_DIR, string_utils.hash_filename(remote_url) + ".pdf")
     output_filename = string_utils.gen_random_string(16) + ".html"
     need_download = True
-    if modified_time != 0 and int(redis_instance.get(save_filename)) == modified_time:
+    last_save_time =  redis_instance.get(save_filename)
+    if modified_time != 0 and last_save_time is not None and int(last_save_time) == modified_time:
         if os.path.exists(os.path.join(config.WORKPLACE_DIR, save_filename)):
             need_download = False
 
