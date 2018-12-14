@@ -3,3 +3,5 @@ venv/
 workplace/
 __pycache__/
 demo_cache.sqlite
+docker-compose.yml
+Dockerfile
