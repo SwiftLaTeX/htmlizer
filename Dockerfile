@@ -1,5 +1,5 @@
 FROM ubuntu:18.04
-RUN apt-get update && apt-get install -y libfontforge2 wget \
+RUN apt-get update && apt-get install -y libfontforge2 \
     libopenjp2-7 \
     libfontconfig1 \
     python3 \

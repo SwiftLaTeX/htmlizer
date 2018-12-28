@@ -70,13 +70,13 @@ def htmlizer_endpoint():
         if last_save_time_byte is not None and last_save_name_byte is not None \
                 and int(last_save_time_byte) == modified_time:
             last_save_name_str = last_save_name_byte.decode('utf-8')
-            last_output_name_str = "%s%d.html" % (last_save_name_str, page)
+            last_output_name_str = "%s%s.html" % (last_save_name_str, page)
             if(os.path.exists(os.path.join(config.WORKPLACE_DIR, last_output_name_str))):
                 return jsonify({"result": "okay", "code": "01", "url": last_output_name_str})
 
     random_str = string_utils.gen_random_string(16)
     save_filename = os.path.join(config.WORKPLACE_DIR, random_str + ".pdf")
-    output_filename = "%s%d.html" % (random_str, page)
+    output_filename = "%s%s.html" % (random_str, page)
 
 
     if not get_remote_file(remote_url, save_filename):
