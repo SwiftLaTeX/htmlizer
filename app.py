@@ -10,26 +10,29 @@ import time
 import os
 import config
 from flask_limiter import Limiter
+from flask_cors import cross_origin
 RATELIMIT_STORAGE_URL = config.REDIS_URL
 redis_instance = redis.from_url(config.REDIS_URL)
 queue = Queue('htmlizer', connection=redis_instance)
 app = Flask(__name__)
 app.config.from_object(__name__)
 
-
-
-def get_token_from_header():
-    s_token = request.headers.get('S-TOKEN', "00000000000000000000000000000000")
-    ALLOWED_TOKEN = ['12345678123456781234567812345678'] #Just a test
-    if isinstance(s_token, str) and s_token in ALLOWED_TOKEN:
-        return s_token
-    return "00000000000000000000000000000000"
+def share_key_func():
+    return "guest"
 
 
 limiter = Limiter(
     app,
-    key_func=get_token_from_header,
+    key_func=share_key_func,
 )
+
+@limiter.request_filter
+def verify_token():
+    s_token = request.headers.get('S-TOKEN', "00000000000000000000000000000000")
+    if isinstance(s_token, str) and s_token == config.APIKEY:
+        return True
+    return False
+
 
 htmlizer_schema = {
     'type': 'object',
@@ -43,8 +46,11 @@ htmlizer_schema = {
 }
 
 
+
+
+
 @app.route('/htmlizer', methods=['POST'])
-@limiter.limit("60/minute")
+@limiter.limit("30/minute")
 @expects_json(htmlizer_schema)
 def htmlizer_endpoint():
     remote_url = g.data['url']
@@ -55,18 +61,26 @@ def htmlizer_endpoint():
     if remote_url == "" or not remote_url.startswith("http"):
         return jsonify({"result": "failed", "code": "-05", "reason": "invalid url detected!"}), 500
 
-    save_filename = os.path.join(config.WORKPLACE_DIR, string_utils.hash_filename(remote_url) + ".pdf")
-    output_filename = string_utils.gen_random_string(16) + ".html"
-    need_download = True
-    last_save_time =  redis_instance.get(save_filename)
-    if modified_time != 0 and last_save_time is not None and int(last_save_time) == modified_time:
-        if os.path.exists(os.path.join(config.WORKPLACE_DIR, save_filename)):
-            need_download = False
+    cache_key = string_utils.hash_filename(remote_url)
 
-    if need_download:
-        if not get_remote_file(remote_url, save_filename):
-            return jsonify({"result": "failed", "code": "-06", "reason": "Unable to fetch remote file, either it is too large or unreachable!"}), 500
-        redis_instance.set(save_filename, modified_time)
+    if modified_time != 0: #We could check whether there is cache result
+        last_save_time_byte = redis_instance.get(cache_key + ".time")
+        last_save_name_byte = redis_instance.get(cache_key + ".name")
+
+        if last_save_time_byte is not None and last_save_name_byte is not None \
+                and int(last_save_time_byte) == modified_time:
+            last_save_name_str = last_save_name_byte.decode('utf-8')
+            last_output_name_str = "%s%d.html" % (last_save_name_str, page)
+            if(os.path.exists(os.path.join(config.WORKPLACE_DIR, last_output_name_str))):
+                return jsonify({"result": "okay", "code": "01", "url": last_output_name_str})
+
+    random_str = string_utils.gen_random_string(16)
+    save_filename = os.path.join(config.WORKPLACE_DIR, random_str + ".pdf")
+    output_filename = "%s%d.html" % (random_str, page)
+
+
+    if not get_remote_file(remote_url, save_filename):
+        return jsonify({"result": "failed", "code": "-06", "reason": "Unable to fetch remote file, either it is too large or unreachable!"}), 500
 
 
     job = queue.enqueue_call(htmlizer.convert_pdf_to_html, args=(save_filename, output_filename, page, zoom_ratio,),
@@ -79,6 +93,9 @@ def htmlizer_endpoint():
         if wait_count > config.TASK_TIMEOUT/config.TICKING_ACCURARCY:
             break
 
+    redis_instance.set(cache_key + ".time", modified_time)
+    redis_instance.set(cache_key + ".name", random_str)
+
     if job.result is None:
         return jsonify({"result": "failed", "code": "-03", "reason": "task timeout"}), 500
     elif job.result == -1:
@@ -88,6 +105,7 @@ def htmlizer_endpoint():
 
 
 @app.route('/<path:path>')
+@cross_origin()
 def serve_html(path):
     if path.endswith(".html"):
         return send_from_directory(config.WORKPLACE_DIR, secure_filename(path))

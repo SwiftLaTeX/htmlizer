@@ -1,6 +1,7 @@
 import string
 import random
 import hashlib
+import re
 
 def allowed_file(filename):
     return '.' in filename and \
