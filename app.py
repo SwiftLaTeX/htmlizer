@@ -61,7 +61,7 @@ def htmlizer_endpoint():
     if remote_url == "" or not remote_url.startswith("http"):
         return jsonify({"result": "failed", "code": "-05", "reason": "invalid url detected!"}), 500
 
-    cache_key = string_utils.hash_filename(remote_url)
+    cache_key = remote_url
 
     if modified_time != 0: #We could check whether there is cache result
         last_save_time_byte = redis_instance.get(cache_key + ".time")
