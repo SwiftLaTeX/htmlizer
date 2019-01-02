@@ -61,7 +61,8 @@ def htmlizer_endpoint():
     if remote_url == "" or not remote_url.startswith("http"):
         return jsonify({"result": "failed", "code": "-05", "reason": "invalid url detected!"}), 500
 
-    cache_key = string_utils.hash_filename(remote_url)
+    cache_key = remote_url
+    random_str = string_utils.gen_random_string(16)
 
     if modified_time != 0: #We could check whether there is cache result
         last_save_time_byte = redis_instance.get(cache_key + ".time")
@@ -74,12 +75,9 @@ def htmlizer_endpoint():
             if os.path.exists(os.path.join(config.WORKPLACE_DIR, last_output_name_str)):
                 return jsonify({"result": "okay", "code": "01", "url": last_output_name_str})
             else:
-                print("file not exists %s" % last_output_name_str)
-        else:
-            print("Simply not cache or modifify time not matched")
+                random_str = last_save_name_str #//We can still reuse it!
 
-
-    random_str = string_utils.gen_random_string(16)
+    #random_str = string_utils.gen_random_string(16)
     save_filename = os.path.join(config.WORKPLACE_DIR, random_str + ".pdf")
     output_filename = "%s%s.html" % (random_str, page)
 
