@@ -66,13 +66,18 @@ def htmlizer_endpoint():
     if modified_time != 0: #We could check whether there is cache result
         last_save_time_byte = redis_instance.get(cache_key + ".time")
         last_save_name_byte = redis_instance.get(cache_key + ".name")
-
+        print("Checking %s result %s %s" % (cache_key, last_save_name_byte, last_save_name_byte))
         if last_save_time_byte is not None and last_save_name_byte is not None \
                 and int(last_save_time_byte) == modified_time:
             last_save_name_str = last_save_name_byte.decode('utf-8')
             last_output_name_str = "%s%s.html" % (last_save_name_str, page)
-            if(os.path.exists(os.path.join(config.WORKPLACE_DIR, last_output_name_str))):
+            if os.path.exists(os.path.join(config.WORKPLACE_DIR, last_output_name_str)):
                 return jsonify({"result": "okay", "code": "01", "url": last_output_name_str})
+            else:
+                print("file not exists %s" % last_output_name_str)
+        else:
+            print("Simply not cache or modifify time not matched")
+
 
     random_str = string_utils.gen_random_string(16)
     save_filename = os.path.join(config.WORKPLACE_DIR, random_str + ".pdf")
