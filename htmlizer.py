@@ -5,7 +5,7 @@ import logging
 
 
 def convert_pdf_to_html(input_file, output_file, page, zoom_ratio = 2):
-    startTime = time.time()
+    #startTime = time.time()
     cmd = ["pdf2htmlEX", "--zoom", str(zoom_ratio), "--decompose-ligature", "1",
                "--embed-javascript", "0", "--data-dir", config.PDF2HTMLEX_ASSETS_URL, "-f",
                str(page), "-l",
@@ -28,9 +28,9 @@ def convert_pdf_to_html(input_file, output_file, page, zoom_ratio = 2):
     if not finished:
         pro.terminate()
 
-    stopTime = time.time()
+    #stopTime = time.time()
 
-    logging.warning("It costs %s" % (stopTime - startTime))
+    #logging.warning("It costs %s" % (stopTime - startTime))
 
     if r != 0:
         logging.error("Task failed, filename %s" % input_file)
