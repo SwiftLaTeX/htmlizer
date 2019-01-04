@@ -9,7 +9,6 @@ from flask_expects_json import expects_json
 import time
 import os
 import config
-import logging
 from flask_limiter import Limiter
 from flask_cors import cross_origin
 RATELIMIT_STORAGE_URL = config.REDIS_URL
@@ -54,7 +53,6 @@ htmlizer_schema = {
 @limiter.limit("30/minute")
 @expects_json(htmlizer_schema)
 def htmlizer_endpoint():
-    time1 = time.time()
     remote_url = g.data['url']
     page = "1" if not 'page' in g.data else g.data['page']
     zoom_ratio = "1" if not 'zoom_ratio' in g.data else g.data['zoom_ratio']
@@ -87,8 +85,7 @@ def htmlizer_endpoint():
     if not get_remote_file(remote_url, save_filename):
         return jsonify({"result": "failed", "code": "-06", "reason": "Unable to fetch remote file, either it is too large or unreachable!"}), 500
 
-    time2 = time.time()
-    logging.warning("Time 1 %s" % (time2 - time1))
+
     job = queue.enqueue_call(htmlizer.convert_pdf_to_html, args=(save_filename, output_filename, page, zoom_ratio,),
                              timeout=config.TASK_TIMEOUT)
 
@@ -102,8 +99,6 @@ def htmlizer_endpoint():
     redis_instance.set(cache_key + ".time", modified_time)
     redis_instance.set(cache_key + ".name", random_str)
 
-    time3 = time.time()
-    logging.warning("Time 2 %s" % (time3 - time2))
     if job.result is None:
         return jsonify({"result": "failed", "code": "-03", "reason": "task timeout"}), 500
     elif job.result == -1:
@@ -118,6 +113,19 @@ def serve_html(path):
     if path.endswith(".html"):
         return send_from_directory(config.WORKPLACE_DIR, secure_filename(path))
     return abort(404)
+
+
+@app.route('/font/<string:fontname>')
+@cross_origin()
+def serve_font(fontname):
+    if "+" in fontname:
+        fontname = fontname.split("+")[1]
+    fontname = fontname.lower()
+    files = os.listdir(config.FONT_DIR)
+    for f in files:
+        if fontname == f.lower():
+            return send_from_directory(config.FONT_DIR, f)
+    return send_from_directory(config.FONT_DIR, "default.ttf")
 
 
 @app.route('/')

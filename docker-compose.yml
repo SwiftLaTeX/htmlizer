@@ -8,6 +8,8 @@ services:
             - redis_server
         ports:
             - 80:5001
+        dns:
+           - 130.216.1.1
         environment:
             REDIS_URL: redis://redis_server:6379
             APIKEY: 9bdd1d30e841e30b00a69276b9e90684

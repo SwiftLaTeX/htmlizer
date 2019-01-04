@@ -5,4 +5,5 @@ PDF2HTMLEX_ASSETS_URL = os.path.join(os.path.split(os.path.realpath(__file__))[0
 TICKING_ACCURARCY = 0.005
 TASK_TIMEOUT = 10
 WORKPLACE_DIR = os.path.join(os.path.split(os.path.realpath(__file__))[0], "workplace")
+FONT_DIR = os.path.join(os.path.split(os.path.realpath(__file__))[0], "font")
 FILE_STORAGE_TIME = 3600
