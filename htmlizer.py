@@ -5,6 +5,7 @@ import logging
 
 
 def convert_pdf_to_html(input_file, output_file, page, zoom_ratio = 2):
+    startTime = time.time()
     cmd = ["pdf2htmlEX", "--zoom", str(zoom_ratio), "--decompose-ligature", "1",
                "--embed-javascript", "0", "--data-dir", config.PDF2HTMLEX_ASSETS_URL, "-f",
                str(page), "-l",
@@ -12,7 +13,7 @@ def convert_pdf_to_html(input_file, output_file, page, zoom_ratio = 2):
 
     logging.debug("A task received %s" % (cmd))
 
-    pro = subprocess.Popen(cmd, cwd=config.WORKPLACE_DIR)
+    pro = subprocess.Popen(cmd, cwd=config.WORKPLACE_DIR, stdout=subprocess.DEVNULL)
     wait_count = 0
     r = None
     finished = False
@@ -27,6 +28,9 @@ def convert_pdf_to_html(input_file, output_file, page, zoom_ratio = 2):
     if not finished:
         pro.terminate()
 
+    stopTime = time.time()
+
+    print("It costs %s" % (stopTime - startTime))
 
     if r != 0:
         logging.error("Task failed, filename %s" % input_file)
