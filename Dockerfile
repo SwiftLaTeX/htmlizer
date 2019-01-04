@@ -2,6 +2,10 @@ FROM ubuntu:18.04
 RUN apt-get update && apt-get install -y libfontforge2 \
     libopenjp2-7 \
     libfontconfig1 \
+    libfreetype6 \
+    libjpeg8 \
+    libcairo2 \
+    libpango1.0-0 \
     python3 \
     python3-pip \
     git

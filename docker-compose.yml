@@ -10,6 +10,7 @@ services:
             - 80:5001
         environment:
             REDIS_URL: redis://redis_server:6379
+            APIKEY: 9bdd1d30e841e30b00a69276b9e90684
         volumes:
           - ~/workplace:/app/workplace
     htmlizer-worker-1:
@@ -24,6 +25,9 @@ services:
         python3 worker.py
       volumes:
         - ~/workplace:/app/workplace
+      tmpfs:
+        - /run
+        - /tmp
     htmlizer-worker-2:
       restart: always
       image: swiftlatex/htmlizer
@@ -36,6 +40,9 @@ services:
         python3 worker.py
       volumes:
         - ~/workplace:/app/workplace
+      tmpfs:
+        - /run
+        - /tmp
     htmlizer-worker-3:
       restart: always
       image: swiftlatex/htmlizer
@@ -48,6 +55,9 @@ services:
         python3 worker.py
       volumes:
         - ~/workplace:/app/workplace
+      tmpfs:
+      - /run
+      - /tmp
     htmlizer-worker-4:
       restart: always
       image: swiftlatex/htmlizer
@@ -60,6 +70,9 @@ services:
         python3 worker.py
       volumes:
         - ~/workplace:/app/workplace
+      tmpfs:
+      - /run
+      - /tmp
     htmlizer-cleaner:
         restart: always
         image: swiftlatex/htmlizer
