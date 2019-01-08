@@ -125,7 +125,7 @@ def serve_font(fontname):
     for f in files:
         if fontname == f.lower():
             return send_from_directory(config.FONT_DIR, f)
-    return send_from_directory(config.FONT_DIR, "default.ttf")
+    return send_from_directory(config.FONT_DIR, "default.ttf"), 201
 
 
 @app.route('/')
