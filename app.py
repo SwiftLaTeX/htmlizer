@@ -115,17 +115,17 @@ def serve_html(path):
     return abort(404)
 
 
-@app.route('/font/<string:fontname>')
-@cross_origin()
-def serve_font(fontname):
-    if "+" in fontname:
-        fontname = fontname.split("+")[1]
-    fontname = fontname.lower()
-    files = os.listdir(config.FONT_DIR)
-    for f in files:
-        if fontname == f.lower():
-            return send_from_directory(config.FONT_DIR, f)
-    return send_from_directory(config.FONT_DIR, "default.ttf"), 201
+# @app.route('/font/<string:fontname>')
+# @cross_origin()
+# def serve_font(fontname):
+#     if "+" in fontname:
+#         fontname = fontname.split("+")[1]
+#     fontname = fontname.lower()
+#     files = os.listdir(config.FONT_DIR)
+#     for f in files:
+#         if fontname == f.lower():
+#             return send_from_directory(config.FONT_DIR, f)
+#     return send_from_directory(config.FONT_DIR, "default.ttf"), 201
 
 
 @app.route('/')
